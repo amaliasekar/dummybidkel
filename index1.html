@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Pendataan Pulau-Pulau Kecil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    body, html { margin:0; padding:0; height:100%; }
+    #map { width:100%; height:100%; }
+    .popup-form {
+      width: 250px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+    }
+    .popup-form label {
+      font-weight: bold;
+      display:block;
+      margin-top:6px;
+    }
+    .popup-form input,
+    .popup-form select,
+    .popup-form textarea {
+      width:100%;
+      padding:4px;
+      font-size:12px;
+    }
+    .popup-form button {
+      margin-top:8px;
+      padding:6px;
+      width:100%;
+      background:#0077cc;
+      color:white;
+      border:none;
+      cursor:pointer;
+    }
+    .popup-form button:hover { background:#005fa3; }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Inisialisasi peta
+    var map = L.map('map').setView([-2, 118], 5); // Pusat Indonesia
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var dashboardURL = "https://lookerstudio.google.com/reporting/6ab02ebf-e7c9-4866-9ae4-4d55440946d4"; // ganti ke dashboard kamu
+    var webAppURL = "https://script.google.com/macros/s/AKfycbyZ_n6-dIMZeO2t1eZid-1KWmey9rEYKG_ij7iX55R07axR3cF8qXYjFyXo45GIBTBtRw/exec"; // ganti dengan Web App Apps Script kamu
+
+    // Klik peta → muncul form
+    map.on('click', function(e) {
+      var lat = e.latlng.lat.toFixed(6);
+      var lng = e.latlng.lng.toFixed(6);
+
+      var popupContent = `
+        <div class="popup-form">
+          <form id="dataForm">
+            <input type="hidden" name="latitude" value="${lat}">
+            <input type="hidden" name="longitude" value="${lng}">
+
+            <label>Tanggal</label>
+            <input type="date" name="tanggal" required>
+
+            <label>Jenis Data</label>
+            <select name="jenisdata">
+              <option value="Ekosistem">Ekosistem</option>
+              <option value="Usaha">Usaha</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+
+            <label>Kondisi</label>
+            <input type="text" name="kondisi">
+
+            <label>Jumlah</label>
+            <input type="number" name="jumlah">
+
+            <label>Jenis Kegiatan Usaha</label>
+            <input type="text" name="kegiatan">
+
+            <label>Nama Pemilik Usaha</label>
+            <input type="text" name="pemilik">
+
+            <label>Nama Pulau</label>
+            <input type="text" name="pulau">
+
+            <button type="submit">Kirim</button>
+          </form>
+        </div>
+      `;
+
+      var popup = L.popup()
+        .setLatLng([lat, lng])
+        .setContent(popupContent)
+        .openOn(map);
+
+      // Tambahkan event listener setelah popup dibuat
+      setTimeout(() => {
+        var form = document.getElementById("dataForm");
+        if (form) {
+          form.addEventListener("submit", function(ev){
+            ev.preventDefault();
+
+            var formData = new FormData(form);
+            var jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value });
+
+            fetch(webAppURL, {
+              method: "POST",
+              mode: "no-cors",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(jsonData)
+            }).then(() => {
+              alert("Data berhasil dikirim!");
+              window.location.href = dashboardURL; // redirect ke dashboard
+            }).catch(err => {
+              alert("Gagal kirim data: " + err);
+            });
+          });
+        }
+      }, 300);
+    });
+  </script>
+
+</body>
+</html>
