@@ -9,136 +9,124 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <style>
     body, html { margin:0; padding:0; height:100%; }
-    #map { width:100%; height:70%; }
-    #form-container {
-      padding: 12px;
+    #map { width:100%; height:100%; }
+    .popup-form {
+      width: 250px;
       font-family: Arial, sans-serif;
+      font-size: 13px;
     }
-    label { font-weight: bold; display:block; margin-top:8px; }
-    input, select, textarea {
+    .popup-form label {
+      font-weight: bold;
+      display:block;
+      margin-top:6px;
+    }
+    .popup-form input,
+    .popup-form select,
+    .popup-form textarea {
       width:100%;
-      padding:6px;
-      margin-top:4px;
+      padding:4px;
+      font-size:12px;
     }
-    button {
-      margin-top:12px;
-      padding:10px;
+    .popup-form button {
+      margin-top:8px;
+      padding:6px;
       width:100%;
       background:#0077cc;
       color:white;
       border:none;
       cursor:pointer;
     }
-    button:hover { background:#005fa3; }
+    .popup-form button:hover { background:#005fa3; }
   </style>
 </head>
 <body>
 
   <div id="map"></div>
 
-  <div id="form-container">
-    <h3>Form Pendataan</h3>
-    <form id="dataForm">
-      <label for="tanggal">Tanggal Ditemukan</label>
-      <input type="date" id="tanggal" name="tanggal" required>
-
-      <label for="jenisdata">Jenis Data</label>
-      <select id="jenisdata" name="jenisdata">
-        <option value="Ekosistem">Ekosistem</option>
-        <option value="Usaha">Usaha</option>
-        <option value="Lainnya">Lainnya</option>
-      </select>
-
-      <label for="kondisi">Kondisi</label>
-      <input type="text" id="kondisi" name="kondisi">
-
-      <label for="jumlah">Jumlah</label>
-      <input type="number" id="jumlah" name="jumlah">
-
-      <label for="kegiatan">Jenis Kegiatan Usaha</label>
-      <input type="text" id="kegiatan" name="kegiatan">
-
-      <label for="pemilik">Nama Pemilik Usaha</label>
-      <input type="text" id="pemilik" name="pemilik">
-
-      <label for="pulau">Nama Pulau</label>
-      <input type="text" id="pulau" name="pulau">
-
-      <label for="nib">NIB</label>
-      <input type="text" id="nib" name="nib">
-
-      <label for="pkkprl">PKKPRL</label>
-      <input type="text" id="pkkprl" name="pkkprl">
-
-      <label for="rtrw">Kesesuaian RTRW</label>
-      <input type="text" id="rtrw" name="rtrw">
-
-      <label for="izin">Izin Lingkungan</label>
-      <input type="text" id="izin" name="izin">
-
-      <label for="kbli">KBLI</label>
-      <input type="text" id="kbli" name="kbli">
-
-      <label for="ekosistem">Gambaran Ekosistem</label>
-      <textarea id="ekosistem" name="ekosistem"></textarea>
-
-      <!-- hidden coordinate -->
-      <input type="hidden" id="latitude" name="latitude">
-      <input type="hidden" id="longitude" name="longitude">
-
-      <button type="submit">Kirim Data</button>
-    </form>
-  </div>
-
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     // Inisialisasi peta
-    var map = L.map('map').setView([-2, 118], 5); // pusat Indonesia
-
+    var map = L.map('map').setView([-2, 118], 5); // Pusat Indonesia
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    var marker;
+    var dashboardURL = "https://lookerstudio.google.com/reporting/6ab02ebf-e7c9-4866-9ae4-4d55440946d4"; // ganti ke dashboard kamu
+    var webAppURL = "https://script.google.com/macros/s/AKfycbyZ_n6-dIMZeO2t1eZid-1KWmey9rEYKG_ij7iX55R07axR3cF8qXYjFyXo45GIBTBtRw/exec"; // ganti dengan Web App Apps Script kamu
 
-    // Klik peta untuk ambil koordinat
+    // Klik peta → muncul form
     map.on('click', function(e) {
       var lat = e.latlng.lat.toFixed(6);
       var lng = e.latlng.lng.toFixed(6);
 
-      // Simpan ke hidden input
-      document.getElementById('latitude').value = lat;
-      document.getElementById('longitude').value = lng;
+      var popupContent = `
+        <div class="popup-form">
+          <form id="dataForm">
+            <input type="hidden" name="latitude" value="${lat}">
+            <input type="hidden" name="longitude" value="${lng}">
 
-      if (marker) {
-        map.removeLayer(marker);
-      }
-      marker = L.marker([lat, lng]).addTo(map)
-        .bindPopup("Lokasi dipilih: " + lat + ", " + lng).openPopup();
-    });
+            <label>Tanggal</label>
+            <input type="date" name="tanggal" required>
 
-    // Submit form
-    document.getElementById("dataForm").addEventListener("submit", function(e){
-      e.preventDefault();
+            <label>Jenis Data</label>
+            <select name="jenisdata">
+              <option value="Ekosistem">Ekosistem</option>
+              <option value="Usaha">Usaha</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
 
-      var formData = new FormData(this);
-      var jsonData = {};
-      formData.forEach((value, key) => { jsonData[key] = value });
+            <label>Kondisi</label>
+            <input type="text" name="kondisi">
 
-      fetch("https://script.google.com/macros/s/AKfycbyZ_n6-dIMZeO2t1eZid-1KWmey9rEYKG_ij7iX55R07axR3cF8qXYjFyXo45GIBTBtRw/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(jsonData)
-      }).then(() => {
-        alert("Data berhasil dikirim!");
-        document.getElementById("dataForm").reset();
-        if (marker) map.removeLayer(marker);
-      }).catch(err => {
-        alert("Gagal kirim data: " + err);
-      });
+            <label>Jumlah</label>
+            <input type="number" name="jumlah">
+
+            <label>Jenis Kegiatan Usaha</label>
+            <input type="text" name="kegiatan">
+
+            <label>Nama Pemilik Usaha</label>
+            <input type="text" name="pemilik">
+
+            <label>Nama Pulau</label>
+            <input type="text" name="pulau">
+
+            <button type="submit">Kirim</button>
+          </form>
+        </div>
+      `;
+
+      var popup = L.popup()
+        .setLatLng([lat, lng])
+        .setContent(popupContent)
+        .openOn(map);
+
+      // Tambahkan event listener setelah popup dibuat
+      setTimeout(() => {
+        var form = document.getElementById("dataForm");
+        if (form) {
+          form.addEventListener("submit", function(ev){
+            ev.preventDefault();
+
+            var formData = new FormData(form);
+            var jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value });
+
+            fetch(webAppURL, {
+              method: "POST",
+              mode: "no-cors",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(jsonData)
+            }).then(() => {
+              alert("Data berhasil dikirim!");
+              window.location.href = dashboardURL; // redirect ke dashboard
+            }).catch(err => {
+              alert("Gagal kirim data: " + err);
+            });
+          });
+        }
+      }, 300);
     });
   </script>
 
