@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Pendataan Kelautan</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    body, html { margin:0; padding:0; height:100%; font-family: sans-serif; }
+    #map { height:100%; }
+    #form-container {
+      position:absolute;
+      top:10px; right:10px;
+      background:white; padding:15px;
+      border-radius:8px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3);
+      z-index:1000;
+      width:300px;
+      display:none;
+      max-height: calc(100% - 40px);
+      overflow-y: auto;
+    }
+    label { display:block; margin-top:10px; font-weight:bold; font-size: 14px; }
+    select, input, textarea, button { 
+      width:100%; 
+      margin-top:5px; 
+      padding:8px; 
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+      padding: 10px;
+    }
+    button:hover { background-color: #45a049; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="form-container">
+  <form id="data-form">
+    <h3>Input Data Lapangan</h3>
+
+    <label for="jenis">Jenis Data</label>
+    <select id="jenis" name="jenis" required>
+      <option value="">-- Pilih Jenis Data --</option>
+      <option value="Pendataan_Resort">Pendataan_Resort</option>
+      <option value="Pendataan_Biota">Pendataan_Biota</option>
+      <option value="Pendataan_Biofisik">Pendataan_Biofisik</option>
+      <option value="Penemuan_Biota">Penemuan_Biota</option>
+      <option value="Pelanggaran">Pelanggaran</option>
+    </select>
+
+    <input type="hidden" id="timestamp">
+    <div id="extra-fields"></div>
+
+    <label for="tgl">Tanggal_Ditemukan</label>
+    <input type="date" id="tgl" required>
+
+    <label for="lat">Latitude</label>
+    <input type="text" id="lat" required>
+
+    <label for="lng">Longitude</label>
+    <input type="text" id="lng" required>
+        
+    <button type="button" id="submit-btn" onclick="submitData()">Kirim Data</button>
+  </form>
+</div>
+
+<script>
+  // GANTI DENGAN URL WEB APP ANDA
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwARlaQxffDZw6U0gNh6jUNhnqphUL2xj9gwjjRt_WCWkluNeOVG5nQDZEI4i26__Sm/exec";
+
+  var map = L.map('map').setView([3.1051, 106.2548], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var timestampInput = document.getElementById("timestamp"); // Ambil elemen timestamp
+  var formContainer = document.getElementById("form-container");
+  var latInput = document.getElementById("lat");
+  var lngInput = document.getElementById("lng");
+  var dataForm = document.getElementById("data-form");
+
+  // 👇 PERUBAHAN DI SINI: Fungsi map.on('click')
+  map.on('click', function(e){
+    formContainer.style.display = "block";
+    dataForm.reset(); 
+    document.getElementById("extra-fields").innerHTML = "";
+
+    // Isi Latitude & Longitude (read-only)
+    latInput.value = e.latlng.lat.toFixed(6);
+    lngInput.value = e.latlng.lng.toFixed(6);
+
+    // Buat dan isi Timestamp (tersembunyi)
+    // .toISOString() menghasilkan format YYYY-MM-DDTHH:mm:ss.sssZ
+    const now = new Date();
+    const year = now.getFullYear();
+    // getMonth() dimulai dari 0, jadi tambah 1. padStart(2, '0') untuk memastikan format 2 digit (misal: 09)
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    const localTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    timestampInput.value = localTimestamp;
+  });
+  // 👆 AKHIR PERUBAHAN
+
+  // Bagian kode untuk menampilkan field dinamis (TIDAK ADA PERUBAHAN)
+  document.getElementById("jenis").addEventListener("change", function() {
+    // ... (kode dari jawaban sebelumnya, tidak perlu diubah) ...
+    const jenis = this.value;
+    const extra = document.getElementById("extra-fields");
+    extra.innerHTML = "";
+    if(jenis === "Pendataan_Resort"){
+      extra.innerHTML = `
+        <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
+        <label for="namausaha">Nama Usaha</label><input type="text" id="namausaha">
+        <label for="nib">NIB</label><input type="number" id="nib">
+        <label for="alamatkantor">Alamat Kantor</label><textarea id="alamatkantor" rows="3"></textarea>
+        <label for="contactperson">Contact Person</label><input type="text" id="contactperson">
+        <label for="namapemilikusaha">Nama Pemilik Usaha</label><input type="text" id="namapemilikusaha">
+        <label for="statuskepemilikanmodal">Status Kepemilikan Modal</label><input type="text" id="statuskepemilikanmodal">
+        <label for="namapulau">Nama Pulau</label><input type="text" id="namapulau">
+        <label for="luaspulau">Luas Pulau (km2)</label><input type="number" id="luaspulau">
+        <label for="luasusaha">Luas Usaha di Pulau (hektar)</label><input type="number" id="luasusaha">
+        <label for="rtrw">Kesesuaian RTRW dan Lokasi Usaha</label><textarea id="rtrw" rows="2"></textarea>
+        <label for="buktikepemilikan">Bukti Kepemilikan</label><textarea id="buktikepemilikan" rows="2"></textarea>
+        <label for="statuskawasan">Status Kawasan</label><input type="text" id="statuskawasan">
+        <label for="pkkpr">Izin Lokasi PKKPR</label><input type="text" id="pkkpr">
+        <label for="izinlingkungan">Izin Lingkungan</label><input type="text" id="izinlingkungan">
+        <label for="imb">IMB</label><input type="text" id="imb">
+        <label for="pkkpma">Izin Pemanfaatan PPK dalam rangka PMA</label><textarea id="pkkpma" rows="2"></textarea>
+        <label for="pkkpmdn">Rekomendasi PPK dengan luas dibawah 100 km2 (PMDN)</label><textarea id="pkkpmdn" rows="2"></textarea>
+        <label for="kbli">Izin usaha berbasis KBLI</label><input type="text" id="kbli">
+        <label for="lainnya">Izin usaha lainnya</label><input type="text" id="lainnya">
+        <label for="pkkprl">Izin PKKPRL</label><input type="text" id="pkkprl">
+        <label for="gambaranekosistem">Gambaran Umum Ekosistem Pulau</label><input type="text" id="gambaranekosistem">
+        <label for="ekosistemteresterial">Ekosistem Teresterial</label><input type="text" id="ekosistemteresterial">
+        <label for="faunadipulau">Fauna di pulau dan sekitarnya</label><input type="text" id="faunadipulau">
+        <label for="jmlpenduduk">Jumlah Penduduk</label><input type="number" id="jmlpenduduk">
+        <label for="situsbudaya">Situs Budaya</label><input type="text" id="situsbudaya">
+        <label for="situsagama">Situs Agama</label><input type="text" id="situsagama">
+        <label for="dampaksosial">Dampak Sosial</label><input type="text" id="dampaksosial">
+        <label for="pencarianmsy">Mata Pencaharian Masyarakat Pulau</label><input type="text" id="pencarianmsy">
+        <label for="jmltk">Jumlah Tenaga Kerja yang Terlibat</label><input type="number" id="jmltk">
+        <label for="dampakekonomi">Dampak Ekonomi Masyarakat Pulau</label><input type="text" id="dampakekonomi">
+        <label for="hankam">Informasi keberadaan petugas hankam di sekitar pulau</label><input type="text" id="hankam">
+      `;
+    } else if(jenis === "Pendataan_Biota"){
+      extra.innerHTML = `<label for="jenisBiota">Jenis Biota</label><select id="jenisBiota"><option value="">--Pilih--</option><option value="Penyu">Penyu</option><option value="Cetacea">Cetacea</option></select><div id="sub-biota"></div>`;
+      document.getElementById("jenisBiota").addEventListener("change", function(){
+        const sub = document.getElementById("sub-biota");
+        if(this.value === "Penyu"){
+          sub.innerHTML = `
+            <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
+            <label for="jmljejak">Jumlah temuan jejak</label><input type="number" id="jmljejak">
+            <label for="jmlsarangpalsu">jumlah temuan sarang palsu</label><input type="number" id="jmlsarangpalsu">
+            <label for="jmlsarangbertelur">jumlah temuan sarang bertelur</label><input type="number" id="jmlsarangbertelur">
+            <label for="jmlsarangutuh">jumlah sarang utuh</label><input type="number" id="jmlsarangutuh">
+            <label for="jmlsarangrusakmns">jumlah sarang rusak manusia</label><input type="number" id="jmlsarangrusakmns">
+            <label for="jmlsarangrusakpred">jumlah sarang rusak predator</label><input type="number" id="jmlsarangrusakpred">
+            <label for="kedsarmin">kedalaman sarang minimum</label><input type="number" id="kedsarmin">
+            <label for="kedsarmax">kedalaman sarang maksimum</label><input type="number" id="kedsarmax">
+            <label for="jmlsarphijau">jumlah sarang penyu hijau</label><input type="number" id="jmlsarphijau">
+            <label for="jmlsarpsisik">jumlah sarang penyu sisik</label><input type="number" id="jmlsarpsisik">
+            <label for="jmltlrphijau">jumlah telur penyu hijau</label><input type="number" id="jmltlrphijau">
+            <label for="jmltlrpsisik">jumlah telur penyu sisik</label><input type="number" id="jmltlrpsisik">
+          `;
+        } else if(this.value === "Cetacea"){
+          sub.innerHTML = `
+            <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
+            <label for="family">Family</label><input type="text" id="family">
+            <label for="genus">Genus</label><input type="text" id="genus">
+            <label for="species">Species</label><input type="text" id="species">\
+            <label for="namaumum">Nama Umum</label><input type="text" id="namaumum">
+            <label for="namaina">Nama Indonesia</label><input type="text" id="namaina">
+            <label for="kondkemunculan">Kondisi kemunculan</label><input type="text" id="kondkemunculan">
+            <label for="jmltemuan">Jumlah temuan</label><input type="number" id="jmltemuan">
+            <label for="tipeobs">Tipe observasi</label><input type="text" id="tipeobs">
+            <label for="kondcuaca">Kondisi cuaca</label><input type="text" id="kondcuaca">
+            <label for="kondair">kondisi perairan</label><input type="text" id="kondair">
+            <label for="kondangin">kondisi angin</label><input type="text" id="kondangin">
+            <label for="reaksi">reaksi cetacean</label><input type="text" id="reaksi">
+            <label for="aktivitas">aktivitas</label><input type="text" id="aktivitas">
+            <label for="sumberdata">Sumber data</label><input type="text" id="sumberdata">
+            <label for="deskripsi">Deskripsi</label><input type="text" id="deskripsi">
+          `;
+        }
+      });
+    } else if(jenis === "Pendataan_Biofisik"){
+      extra.innerHTML = `<label for="jenisBiofisik">Jenis Biofisik</label><select id="jenisBiofisik"><option value="">--Pilih--</option><option value="Mangrove">Mangrove</option><option value="Terumbu Karang">Terumbu Karang</option><option value="Ikan Karang">Ikan Karang</option></select><div id="sub-biofisik"></div>`;
+      document.getElementById("jenisBiofisik").addEventListener("change", function(){
+        const sub = document.getElementById("sub-biofisik");
+        if(this.value === "Mangrove"){
+          sub.innerHTML = `<label for="luasMangrove">Luas Mangrove (ha)</label><input type="number" id="luasMangrove"><label for="kondisiMangrove">Kondisi Mangrove</label><input type="text" id="kondisiMangrove">`;
+        } else if(this.value === "Terumbu Karang"){
+          sub.innerHTML = `<label for="persenTutup">% Tutupan</label><input type="number" id="persenTutup"><label for="kondisiTerumbu">Kondisi Terumbu</label><input type="text" id="kondisiTerumbu">`;
+        } else if(this.value === "Ikan Karang"){
+          sub.innerHTML = `<label for="jumlahSpesies">Jumlah Spesies</label><input type="number" id="jumlahSpesies"><label for="kepadatan">Kepadatan</label><input type="text" id="kepadatan">`;
+        }
+      });
+    } else if(jenis === "Pelanggaran"){
+      extra.innerHTML = `<label for="jenisPelanggaran">Jenis Aktivitas</label><select id="jenisPelanggaran"><option value="Penangkapan Ikan">Penangkapan Ikan</option><option value="Labuh Jangkar">Labuh Jangkar</option><option value="Penambangan">Penambangan</option></select><label for="zona">Zona Pelanggaran</label><input type="text" id="zona">`;
+    }
+  });
+
+  // 👇 PERUBAHAN DI SINI: Fungsi submitData()
+async function submitData(){
+    const submitBtn = document.getElementById('submit-btn');
+    const jenis = document.getElementById("jenis").value;
+    
+    // GANTI DENGAN URL DASHBOARD LOOKER STUDIO ANDA
+    const DASHBOARD_URL = "https://lookerstudio.google.com/reporting/dc15387a-3237-4b62-b910-b52de050d507";
+    
+    if (!jenis) {
+        alert("Silakan pilih Jenis Data terlebih dahulu.");
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Mengirim...";
+
+    const dataToSend = {
+      sheet: jenis
+    };
+    const allLabeledInputs = dataForm.querySelectorAll("input[id], select[id], textarea[id]");
+    allLabeledInputs.forEach(el => {
+      if (el.id === 'timestamp') {
+        dataToSend['Timestamp'] = el.value;
+      } else {
+        const label = dataForm.querySelector(`label[for='${el.id}']`);
+        if (label && el.value) {
+          const columnName = label.textContent;
+          dataToSend[columnName] = el.value;
+        }
+      }
+    });
+    const params = new URLSearchParams(dataToSend);
+    const finalURL = SCRIPT_URL + "?" + params.toString();
+  
+    try {
+      const response = await fetch(finalURL, { mode: 'no-cors' });
+      
+      // Tampilkan notifikasi
+      alert("Data berhasil terkirim! Anda akan diarahkan ke dashboard dalam 1 detik.");
+
+      // Tunda redirect selama 1 detik (1000 milidetik)
+      setTimeout(() => {
+        window.location.href = DASHBOARD_URL;
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert("Gagal mengirim data: " + error.message);
+      // Aktifkan kembali tombol jika gagal
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Kirim Data";
+    }
+  }
+  // 👆 AKHIR PERUBAHAN
+</script>
+</body>
+</html>
