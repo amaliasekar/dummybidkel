@@ -241,6 +241,7 @@
                     const sub = document.getElementById("sub-biota");
                     if (this.value === "Penyu") {
                         sub.innerHTML = `
+            <label for="lokasibiota">Lokasi</label><input type="text" id="lokasibiota">
             <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
             <label for="jmljejak">Jumlah temuan jejak</label><input type="number" id="jmljejak">
             <label for="jmlsarangpalsu">jumlah temuan sarang palsu</label><input type="number" id="jmlsarangpalsu">
@@ -257,6 +258,7 @@
           `;
                     } else if (this.value === "Cetacea") {
                         sub.innerHTML = `
+            <label for="lokasibiota">Lokasi</label><input type="text" id="lokasibiota">
             <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
             <label for="family">Family</label><input type="text" id="family">
             <label for="genus">Genus</label><input type="text" id="genus">
@@ -437,6 +439,7 @@
             } else if (jenis === "Penemuan_Biota") {
                 extra.innerHTML = `
         <label for="pengisidata">Pengisi Data (Nama dan Nomor HP)</label><input type="text" id="pengisidata">
+        <label for="lokasibiota">Lokasi</label><input type="text" id="lokasibiota">
         <label for="jenistemuanbiota">Jenis Temuan</label>
         <select id="jenistemuanbiota">
           <option value="Lumba-lumba (termasuk Orca)">Lumba-lumba (termasuk Orca)</option>
@@ -727,4 +730,5 @@ function sendSavedData(auto = false) {
 
 
 </html>
+
 
