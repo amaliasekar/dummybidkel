@@ -241,7 +241,7 @@
                     const sub = document.getElementById("sub-biota");
                     if (this.value === "Penyu") {
                         sub.innerHTML = `
-            <label for="lokasibiota">Lokasi</label><input type="text" id="lokasibiota">
+            <label for="lokasibiota">Lokasi/Stasiun</label><input type="text" id="lokasibiota">
             <label for="pengisidata">Pengisi Data</label><input type="text" id="pengisidata">
             <label for="jmljejak">Jumlah temuan jejak</label><input type="number" id="jmljejak">
             <label for="jmlsarangpalsu">jumlah temuan sarang palsu</label><input type="number" id="jmlsarangpalsu">
@@ -291,6 +291,7 @@
           <option value="Rehabilitasi">Rehabilitasi</option>
           <option value="Sebaran Bantuan Pemerintah">Sebaran Bantuan Pemerintah</option>
         </select>
+        <label for="lokasibiofisik">Lokasi/Stasiun</label><input type="text" id="lokasibiofisik">
         <div id="sub-biofisik"></div>
       `;
                 document.getElementById("jenisBiofisik").addEventListener("change", function () {
@@ -730,5 +731,6 @@ function sendSavedData(auto = false) {
 
 
 </html>
+
 
 
